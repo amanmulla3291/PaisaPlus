@@ -27,10 +27,8 @@ import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
 
-// ── Uncomment on Phase 1 merge ─────────────────────────────────────────────
-// import '../../features/admin/admin_panel_sheet.dart';
-// import '../../core/auth/providers/auth_providers.dart';
-// ──────────────────────────────────────────────────────────────────────────
+import '../../features/admin/admin_panel_sheet.dart';
+import '../../core/services/auth_service.dart';
 
 class PaisaHomeAppBar extends ConsumerWidget {
   final DateTime selectedMonth;
@@ -46,11 +44,8 @@ class PaisaHomeAppBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ── Phase 1 merge: delete next line, uncomment the two after it ─────────
-    const isAdmin = false;
-    // final profile = ref.watch(currentProfileProvider).valueOrNull;
-    // final isAdmin = profile?.isAdmin ?? false;
-    // ────────────────────────────────────────────────────────────────────────
+    final profile = ref.watch(authProvider).profile;
+    final isAdmin = profile?.isAdmin ?? false;
 
     final now = DateTime.now();
     final isCurrentMonth =
@@ -281,11 +276,8 @@ class _ProfileAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ── Phase 1 merge: uncomment these two lines ─────────────────────────
-    // final profile = ref.watch(currentProfileProvider).valueOrNull;
-    // final String? photoUrl = profile?.photoUrl;
-    const String? photoUrl = null; // delete this line on Phase 1 merge
-    // ────────────────────────────────────────────────────────────────────
+    final profile = ref.watch(authProvider).profile;
+    final String? photoUrl = profile?.photoUrl;
 
     return GestureDetector(
       onTap: () => context.push('/settings'),

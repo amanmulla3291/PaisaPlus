@@ -44,7 +44,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../supabase/supabase_config.dart';
+import 'package:paisaplus/core/supabase/supabase_config.dart';
+import 'package:paisaplus/core/supabase/supabase_client.dart';
+import 'package:paisaplus/core/security/device_binding_service.dart';
+import 'package:paisaplus/core/isar/providers/service_providers.dart';
+import 'package:paisaplus/core/isar/services/account_service.dart';
+import 'package:paisaplus/core/isar/services/category_service.dart';
 
 // Google Client ID is now managed in SupabaseConfig via --dart-define
 String get _webClientId => SupabaseConfig.googleWebClientId;
