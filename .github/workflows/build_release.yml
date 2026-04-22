@@ -1,0 +1,131 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Accept Android SDK licenses & install NDK
+        run: |
+          SYSTEM_SDK="/usr/local/lib/android/sdk"
+          echo "ANDROID_SDK_ROOT=$SYSTEM_SDK" >> $GITHUB_ENV
+          yes | $SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          $SYSTEM_SDK/cmdline-tools/latest/bin/sdkmanager "ndk;28.2.13676358"
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> .env
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/keystore.jks
+        continue-on-error: true # Allow build to continue if secrets aren't set yet
+
+      - name: Create key.properties
+        run: |
+          echo "storeFile=keystore.jks"                        > android/key.properties
+          echo "storePassword=${{ secrets.STORE_PASSWORD }}"  >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}"            >> android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}"      >> android/key.properties
+        continue-on-error: true
+
+      - name: Build APKs (split per ABI)
+        run: flutter build apk --release --split-per-abi
+
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          mv app-armeabi-v7a-release.apk  "PaisaPlus-armeabi-v7a-release.apk" || true
+          mv app-arm64-v8a-release.apk    "PaisaPlus-arm64-v8a-release.apk" || true
+          mv app-x86_64-release.apk       "PaisaPlus-x86_64-release.apk" || true
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-builds
+          path: build/app/outputs/flutter-apk/*.apk
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Create .env file
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+          echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> .env
+
+      - name: Build iOS Release
+        run: flutter build ios --release --no-codesign
+
+      - name: Zip iOS Build
+        run: zip -r PaisaPlus-ios.zip build/ios/iphoneos/
+
+      - name: Upload iOS Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: PaisaPlus-ios.zip
+
+  release:
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Android Builds
+        uses: actions/download-artifact@v4
+        with:
+          name: android-builds
+          path: artifacts/android
+
+      - name: Download iOS Build
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-build
+          path: artifacts/ios
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: PaisaPlus - v${{ github.run_number }}
+          files: |
+            artifacts/android/*.apk
+            artifacts/ios/PaisaPlus-ios.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

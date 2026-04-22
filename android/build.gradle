@@ -1,0 +1,53 @@
+// android/build.gradle  —  PaisaPlus (project-level)
+// ─────────────────────────────────────────────────────────────────────────────
+// Kotlin 2.2.20 + AGP 8.11.1 — must match settings.gradle.kts exactly.
+// ─────────────────────────────────────────────────────────────────────────────
+
+buildscript {
+    // MUST match settings.gradle.kts: id("org.jetbrains.kotlin.android") version "2.2.20"
+    ext.kotlin_version = '2.2.20'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // MUST match settings.gradle.kts: id("com.android.application") version "8.11.1"
+        classpath 'com.android.tools.build:gradle:8.11.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        // NOTE: No google-services.json / Firebase — Supabase only
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.buildDir = '../build'
+
+subprojects {
+    // Fix for older plugins (e.g. isar_flutter_libs) that don't declare
+    // an Android namespace — AGP 8+ requires it.
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            if (project.android.hasProperty('namespace') &&
+                project.android.namespace == null) {
+                project.android.namespace = project.group
+            }
+        }
+    }
+
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}

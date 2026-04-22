@@ -1,0 +1,118 @@
+name: paisaplus
+description: "PaisaPlus — Premium private expense tracker for India. Local-first, encrypted, Kite-level polish."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.22.0"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RUNTIME DEPENDENCIES
+# ─────────────────────────────────────────────────────────────────────────────
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Core UI ──────────────────────────────────────────────────────────────
+  cupertino_icons: ^1.0.8
+  flutter_animate: ^4.5.0          # Buttery-smooth animations (Kite feel)
+  fl_chart: ^0.69.0                # Pie + line charts for dashboards
+  google_fonts: ^6.2.1             # Inter / Nunito for fintech typography
+
+  # ── State Management ─────────────────────────────────────────────────────
+  # Using manual Riverpod 2.0 (no code-gen) to avoid isar_generator
+  # analyzer conflict. All providers written as StateNotifier / AsyncNotifier.
+  flutter_riverpod: ^2.5.1         # Core Riverpod runtime — no annotation needed
+
+  # ── Navigation ───────────────────────────────────────────────────────────
+  go_router: ^14.2.7               # Declarative routing + deep links
+
+  # ── Database (Local-First) ────────────────────────────────────────────────
+  # Isar 3.1.x — last stable pub.dev release (April 2026).
+  # isar_generator REMOVED from dev_deps — schemas written manually.
+  # This resolves the analyzer version conflict with riverpod tooling.
+  # Upgrade path: when Isar 4.x lands on pub.dev, re-add generator.
+  isar: ^3.1.0+1                   # Local encrypted NoSQL DB
+  isar_flutter_libs: ^3.1.0+1      # Isar native binaries for Flutter
+
+  # ── Authentication & Backend (Supabase — auth + metadata ONLY) ───────────
+  supabase_flutter: ^2.7.0         # Supabase SDK (NO financial data sent)
+  google_sign_in: ^6.2.1           # "Continue with Google" — the only auth method
+
+  # ── Security ─────────────────────────────────────────────────────────────
+  flutter_secure_storage: ^9.2.2   # Stores Isar encryption key on-device
+  encrypt: ^5.0.3                  # AES-256 for backup file encryption
+  local_auth: ^2.3.0               # Biometric + PIN fallback lock
+  crypto: ^3.0.3                   # SHA-256 for device fingerprint hashing
+
+  # ── Device Identity (for 1-device binding) ───────────────────────────────
+  flutter_udid: ^3.0.0             # Stable device UUID across reinstalls
+  device_info_plus: ^11.1.0        # Device model/OS info for fingerprint
+
+  # ── Storage & Files ──────────────────────────────────────────────────────
+  path_provider: ^2.1.3            # App/Downloads directory paths
+  file_picker: ^8.1.2              # Pick .enc file for restore; save dialog
+
+  # ── Local Notifications (Backup reminder — no cloud) ─────────────────────
+  flutter_local_notifications: ^18.0.1
+
+  # ── Utilities ────────────────────────────────────────────────────────────
+  shared_preferences: ^2.3.2       # Stores: onboarding_done, first_launch flags
+  intl: ^0.19.0                    # INR currency + date formatting
+  uuid: ^4.4.2                     # UUID generation for Isar IDs
+  collection: ^1.18.0              # Extended collection utilities
+  share_plus: ^12.0.2
+  flutter_dotenv: ^5.2.1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEV DEPENDENCIES
+# ─────────────────────────────────────────────────────────────────────────────
+# NOTE: isar_generator, riverpod_generator, riverpod_lint, and custom_lint
+# are ALL excluded because isar_generator 3.x requires analyzer <6.0.0
+# while all riverpod tooling requires analyzer ^6.x+. These are fundamentally
+# incompatible until Isar 4.x ships on pub.dev with a modern analyzer dep.
+# Isar schemas are written manually. Riverpod providers use manual syntax.
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icons/icon.png
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FLUTTER CONFIG
+# ─────────────────────────────────────────────────────────────────────────────
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+    - .env
+
+  # App-level fonts — Inter for UI, Nunito for display numbers (Kite-inspired)
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Nunito-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Nunito-ExtraBold.ttf
+          weight: 800

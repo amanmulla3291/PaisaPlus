@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  android/app/src/main/res/xml/data_extraction_rules.xml
+  DISABLES all Android Auto Backup and D2D transfer for PaisaPlus.
+  Rationale: Financial data must never leave the device via system backups.
+  Users use our own encrypted .enc backup instead.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="."/>
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="."/>
+    </device-transfer>
+</data-extraction-rules>

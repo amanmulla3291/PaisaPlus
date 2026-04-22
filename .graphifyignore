@@ -1,0 +1,15 @@
+# Flutter platform directories - mostly boilerplate
+android/
+ios/
+linux/
+macos/
+windows/
+web/
+
+# Build and cache
+build/
+.dart_tool/
+.pub-cache/
+
+# Test files (optional, but often excluded to focus on core architecture)
+test/
