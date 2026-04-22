@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
 
       - name: Build APKs (split per ABI)
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       - name: Rename APKs
         run: |
@@ -87,7 +87,7 @@ jobs:
           echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> .env
 
       - name: Build iOS Release
-        run: flutter build ios --release --no-codesign
+        run: flutter build ios --release --no-codesign --no-tree-shake-icons
 
       - name: Zip iOS Build
         run: zip -r PaisaPlus-ios.zip build/ios/iphoneos/

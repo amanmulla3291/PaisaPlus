@@ -117,19 +117,19 @@ class _AdminLogoState extends State<_AdminLogo>
     super.dispose();
   }
 
-  void _handleLongPress() {
-    // Silent no-op for non-admin users — no hint that the gesture exists.
+  void _handleLongPress(BuildContext context) {
     if (!widget.isAdmin) return;
     HapticFeedback.heavyImpact();
-    // /admin is a GoRouter route registered in app_router.dart with a guard
-    // that checks is_admin == true. Built in Phase 5 (Admin Panel UI).
-    context.push('/admin');
+    AdminPanelSheet.show(context);
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPress: _handleLongPress,
+    return InkWell(
+      onLongPress: () => _handleLongPress(context),
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
       onTapDown: (_) => _pulseController.reverse(),
       onTapUp: (_) => _pulseController.forward(),
       onTapCancel: () => _pulseController.forward(),

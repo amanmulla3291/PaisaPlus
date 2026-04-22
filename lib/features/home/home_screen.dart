@@ -1,22 +1,37 @@
 // lib/features/home/home_screen.dart
-// ─────────────────────────────────────────────────────────────────────────────
-// Phase 2 Home Dashboard — replaces the "Coming in Phase 2" stub.
-// Imports all Phase 2 home widgets.
-// ─────────────────────────────────────────────────────────────────────────────
+//
+// PaisaPlus – Home Dashboard Screen
+// ------------------------------------
+// The main screen users land on after login/approval.
+// Composed of vertically stacked sections in a CustomScrollView (SliverList)
+// for buttery-smooth performance even with many widgets.
+//
+// Section order (top to bottom):
+//   1. AppBar         — greeting, month picker, admin long-press logo
+//   2. Balance Card   — total balance (large) + net worth toggle
+//   3. KPI Row        — monthly expense | income | savings rate (3 chips)
+//   4. Accounts Strip — horizontal scroll of account balance cards
+//   5. Pie Chart      — expense breakdown by category this month
+//   6. Line Chart     — daily spend trend this month
+//   7. Recent Txns    — last 5 transactions with "See all" link
+//
+// All data comes from Riverpod providers (service_providers.dart).
+// No setState anywhere — pure Riverpod reactive UI.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/isar/providers/service_providers.dart';
-import '../../shared/theme/app_colors.dart';
+import '../../shared/theme/app_theme.dart';
+import '../../shared/widgets/paisa_app_bar.dart';
 import 'widgets/balance_card.dart';
 import 'widgets/kpi_row.dart';
 import 'widgets/account_cards_strip.dart';
 import 'widgets/expense_pie_chart.dart';
 import 'widgets/spend_line_chart.dart';
 import 'widgets/recent_transactions_section.dart';
-import 'widgets/phase3_insights.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -38,7 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     _staggerController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 900),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _staggerController.forward();
@@ -60,7 +75,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   void _goToNextMonth() {
     final now = DateTime.now();
-    if (_selectedMonth.isBefore(DateTime(now.year, now.month))) {
+    final currentMonth = DateTime(now.year, now.month);
+    if (_selectedMonth.isBefore(currentMonth)) {
       HapticFeedback.selectionClick();
       setState(() {
         _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
@@ -71,11 +87,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      // The AppBar is provided by MainShell — HomeScreen only provides body
+      backgroundColor: AppTheme.background,
       body: RefreshIndicator(
-        color: AppColors.primary,
-        backgroundColor: AppColors.surface,
+        color: AppTheme.zerodhaRed,
+        backgroundColor: AppTheme.surface,
         onRefresh: () async {
           ref.invalidate(netWorthInPaiseProvider);
           ref.invalidate(allAccountBalancesProvider);
@@ -90,99 +105,91 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            // Month navigator
-            SliverToBoxAdapter(
-              child: _MonthNav(
-                selectedMonth: _selectedMonth,
-                onPrevious: _goToPreviousMonth,
-                onNext: _goToNextMonth,
-              ),
+            PaisaHomeAppBar(
+              selectedMonth: _selectedMonth,
+              onPreviousMonth: _goToPreviousMonth,
+              onNextMonth: _goToNextMonth,
             ),
-
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Balance card
-                  _Staggered(
+                  const SizedBox(height: 8),
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.0,
                     child: BalanceCard(selectedMonth: _selectedMonth),
                   ),
                   const SizedBox(height: 12),
-
-                  // KPI row
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.1,
                     child: KpiRow(selectedMonth: _selectedMonth),
                   ),
-                  const SizedBox(height: 12),
-
-                  // Phase 3 Insights (Budgets, Loans, Bills)
-                  _Staggered(
-                    controller: _staggerController,
-                    delay: 0.15,
-                    child: HomePhase3Insights(month: _selectedMonth),
-                  ),
                   const SizedBox(height: 20),
-
-                  // Accounts
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.2,
-                    child: const _SectionHeader(title: 'Accounts'),
+                    child: _SectionHeader(
+                      title: 'Accounts',
+                      actionLabel: 'Manage',
+                      onAction: () => context.go('/accounts'),
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.25,
                     child: const AccountCardsStrip(),
                   ),
                   const SizedBox(height: 24),
-
-                  // Spending pie chart
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.35,
-                    child: const _SectionHeader(title: 'Spending by Category'),
+                    child: _SectionHeader(
+                      title: 'Spending by Category',
+                      actionLabel: _monthLabel(_selectedMonth),
+                      onAction: null,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.4,
                     child: ExpensePieChart(selectedMonth: _selectedMonth),
                   ),
                   const SizedBox(height: 24),
-
-                  // Daily line chart
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.5,
-                    child: const _SectionHeader(title: 'Daily Spending'),
+                    child: const _SectionHeader(
+                      title: 'Daily Spending',
+                      actionLabel: null,
+                      onAction: null,
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.55,
                     child: SpendLineChart(selectedMonth: _selectedMonth),
                   ),
                   const SizedBox(height: 24),
-
-                  // Recent transactions
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.65,
-                    child: const _SectionHeader(title: 'Recent'),
+                    child: _SectionHeader(
+                      title: 'Recent',
+                      actionLabel: 'See all',
+                      onAction: () => context.go('/transactions'),
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  _Staggered(
+                  _StaggeredSection(
                     controller: _staggerController,
                     delay: 0.7,
                     child: const RecentTransactionsSection(),
                   ),
-
-                  // Padding for FAB
                   const SizedBox(height: 100),
                 ]),
               ),
@@ -192,106 +199,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ),
     );
   }
-}
 
-// ── Month Navigator bar ───────────────────────────────────────────────────────
-
-class _MonthNav extends StatelessWidget {
-  final DateTime selectedMonth;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-
-  const _MonthNav({
-    required this.selectedMonth,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun',
-    'Jul','Aug','Sep','Oct','Nov','Dec',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final isCurrentMonth =
-        selectedMonth.year == now.year && selectedMonth.month == now.month;
-    final label =
-        '${_months[selectedMonth.month - 1]} ${selectedMonth.year}';
-
-    return Container(
-      color: AppColors.background,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          GestureDetector(
-            onTap: onPrevious,
-            child: const Padding(
-              padding: EdgeInsets.all(6),
-              child: Icon(Icons.chevron_left_rounded,
-                  size: 20, color: AppColors.textSecondary),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.2,
-            ),
-          ),
-          const SizedBox(width: 6),
-          GestureDetector(
-            onTap: isCurrentMonth ? null : onNext,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Icon(Icons.chevron_right_rounded,
-                  size: 20,
-                  color: isCurrentMonth
-                      ? AppColors.textTertiary
-                      : AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
+  String _monthLabel(DateTime month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return months[month.month - 1];
   }
 }
-
-// ── Section header ────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontFamily: 'Inter',
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-        letterSpacing: -0.2,
-      ),
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            letterSpacing: -0.2,
+          ),
+        ),
+        const Spacer(),
+        if (actionLabel != null)
+          GestureDetector(
+            onTap: onAction,
+            child: Text(
+              actionLabel!,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: onAction != null ? AppTheme.zerodhaRed : AppTheme.textTertiary,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
 
-// ── Stagger animation wrapper ─────────────────────────────────────────────────
-
-class _Staggered extends StatelessWidget {
+class _StaggeredSection extends StatelessWidget {
   final AnimationController controller;
   final double delay;
   final Widget child;
 
-  const _Staggered({
+  const _StaggeredSection({
     required this.controller,
     required this.delay,
     required this.child,
@@ -299,20 +264,23 @@ class _Staggered extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final anim = CurvedAnimation(
+    final interval = CurvedAnimation(
       parent: controller,
-      curve: Interval(delay, (delay + 0.3).clamp(0.0, 1.0),
-          curve: Curves.easeOutCubic),
+      curve: Interval(delay, (delay + 0.3).clamp(0.0, 1.0), curve: Curves.easeOutCubic),
     );
+
     return AnimatedBuilder(
-      animation: anim,
-      builder: (_, __) => Opacity(
-        opacity: anim.value,
-        child: Transform.translate(
-          offset: Offset(0, 16 * (1 - anim.value)),
-          child: child,
-        ),
-      ),
+      animation: interval,
+      builder: (context, _) {
+        return Opacity(
+          opacity: interval.value,
+          child: Transform.translate(
+            offset: Offset(0, 18 * (1 - interval.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

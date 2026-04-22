@@ -27,6 +27,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/transactions/quick_add/quick_add_sheet.dart';
+import '../../features/admin/admin_panel_sheet.dart';
 
 import '../../core/services/auth_service.dart';
 import '../../shared/theme/app_colors.dart';
@@ -63,16 +64,12 @@ class MainShell extends ConsumerWidget {
       appBar: AppBar(
         leadingWidth: 56,
         leading: InkWell(
-          // FIX: InkWell instead of GestureDetector.
-          // GestureDetector inside AppBar.leading loses long-press to the
-          // AppBar's own gesture handling. InkWell participates correctly.
           onLongPress: isAdmin
               ? () {
                   HapticFeedback.heavyImpact();
                   _openAdminPanel(context);
                 }
               : null,
-          // No visible ink feedback — this is a brand logo, not a button
           splashColor: Colors.transparent,
           highlightColor: Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -143,14 +140,7 @@ class MainShell extends ConsumerWidget {
   }
 
   void _openAdminPanel(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (_) => const _AdminPanelPlaceholder(),
-    );
+    AdminPanelSheet.show(context);
   }
 
   void _showQuickAdd(BuildContext context) {
@@ -199,9 +189,6 @@ class _BottomNav extends StatelessWidget {
               icon: Icons.bar_chart_outlined,
               activeIcon: Icons.bar_chart_rounded,
               label: 'Reports',
-              // FIX: was index 3 (Reports), but Budgets (index 2) was
-              // unreachable. Layout: Home | Txns | [FAB] | Reports | More
-              // Budgets is accessible via More tab → settings in Phase 3.
               index: 3,
               currentIndex: currentIndex,
               onTap: onTap,
@@ -266,59 +253,6 @@ class _NavItem extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Admin Panel Placeholder ───────────────────────────────────────────────────
-class _AdminPanelPlaceholder extends StatelessWidget {
-  const _AdminPanelPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Icon(
-            Icons.admin_panel_settings_rounded,
-            color: AppColors.primary,
-            size: 40,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Admin Panel',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Full admin panel coming in Phase 5.\nYou\'ll manage approvals and device bindings here.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-        ],
       ),
     );
   }
